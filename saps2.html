@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAPS II — Калькулятор тяжести состояния ОРИТ</title>
+<style>
+  :root {
+    --bg-primary: #0a0e1a;
+    --bg-secondary: #0f1628;
+    --bg-card: #131d35;
+    --bg-card-hover: #172040;
+    --border-color: #1e2d50;
+    --border-active: #00d4ff;
+    --text-primary: #e8f4ff;
+    --text-secondary: #7a9cc4;
+    --text-muted: #4a6080;
+    --neon-blue: #00d4ff;
+    --neon-green: #00ff88;
+    --neon-yellow: #ffdd00;
+    --neon-orange: #ff8800;
+    --neon-red: #ff3366;
+    --neon-purple: #a855f7;
+    --score-font: 'Courier New', Courier, monospace;
+    --btn-green: #003d20;
+    --btn-green-border: #00c853;
+    --btn-green-text: #00ff88;
+    --btn-yellow: #3d2e00;
+    --btn-yellow-border: #ffd600;
+    --btn-yellow-text: #ffdd00;
+    --btn-red: #3d0010;
+    --btn-red-border: #ff3366;
+    --btn-red-text: #ff6688;
+    --shadow-card: 0 4px 24px rgba(0,0,0,0.4);
+    --shadow-neon: 0 0 20px rgba(0,212,255,0.15);
+    --radius: 14px;
+    --radius-btn: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .app-header {
+    background: linear-gradient(135deg, #0a0e1a 0%, #0d1830 60%, #0a1525 100%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 18px 20px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+
+  .header-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header-icon {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, #00d4ff22, #00d4ff44);
+    border: 1.5px solid var(--neon-blue);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 0 16px rgba(0,212,255,0.2);
+  }
+
+  .header-text h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--neon-blue);
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 20px rgba(0,212,255,0.4);
+  }
+
+  .header-text p {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 1px;
+  }
+
+  .live-score-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border-color);
+    border-radius: 12px;
+    padding: 8px 14px;
+    transition: all 0.3s;
+  }
+
+  .live-score-badge .score-val {
+    font-family: var(--score-font);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--neon-blue);
+    text-shadow: 0 0 16px rgba(0,212,255,0.5);
+    min-width: 44px;
+    text-align: center;
+    transition: color 0.3s;
+  }
+
+  .live-score-badge .score-label {
+    font-size: 10px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    line-height: 1.3;
+  }
+
+  .pulse-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--neon-green);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+    box-shadow: 0 0 8px var(--neon-green);
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.7); }
+  }
+
+  .main-container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 20px 16px 120px;
+  }
+
+  .patient-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+  }
+
+  .section-title-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+  }
+
+  .patient-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .input-group label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    font-weight: 600;
+  }
+
+  .input-group input {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+
+  .input-group input:focus {
+    border-color: var(--neon-blue);
+    box-shadow: 0 0 0 3px rgba(0,212,255,0.08);
+  }
+
+  .input-group input::placeholder { color: var(--text-muted); }
+
+  .progress-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .progress-info { flex: 1; min-width: 160px; }
+
+  .progress-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .progress-bar-outer {
+    background: var(--bg-secondary);
+    border-radius: 99px;
+    height: 6px;
+    overflow: hidden;
+  }
+
+  .progress-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-green));
+    border-radius: 99px;
+    transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+    width: 0%;
+  }
+
+  .progress-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+
+  .stat-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 8px 14px;
+    min-width: 70px;
+  }
+
+  .stat-chip .num { font-family: var(--score-font); font-size: 22px; font-weight: 700; color: var(--neon-blue); }
+  .stat-chip .lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .params-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .param-card {
+    background: var(--bg-card);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow-card);
+    transition: border-color 0.3s, box-shadow 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .param-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--border-active), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .param-card.filled { border-color: #1e3a5f; box-shadow: var(--shadow-card), 0 0 0 1px #00d4ff11; }
+  .param-card.filled::before { opacity: 1; }
+
+  .param-card.error {
+    border-color: var(--neon-red) !important;
+    box-shadow: 0 0 0 2px rgba(255,51,102,0.15) !important;
+    animation: shake 0.4s;
+  }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+
+  .param-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; gap: 8px; }
+  .param-info { flex: 1; }
+  .param-num { font-size: 10px; color: var(--text-muted); font-family: var(--score-font); margin-bottom: 3px; }
+  .param-name { font-size: 14px; font-weight: 700; color: var(--text-primary); line-height: 1.3; }
+  .param-eng { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-style: italic; }
+
+  .param-score-badge {
+    font-family: var(--score-font);
+    font-size: 22px;
+    font-weight: 700;
+    min-width: 42px;
+    text-align: right;
+    color: var(--text-muted);
+    transition: all 0.3s;
+    line-height: 1;
+  }
+
+  .param-score-badge.scored { color: var(--neon-blue); text-shadow: 0 0 12px rgba(0,212,255,0.4); }
+  .param-score-badge.zero { color: var(--neon-green); }
+  .param-score-badge.pts-label { font-size: 10px; color: var(--text-muted); display: block; text-align: right; font-family: sans-serif; margin-top: 2px; }
+
+  .param-note {
+    font-size: 11px;
+    color: var(--neon-yellow);
+    background: rgba(255,221,0,0.06);
+    border: 1px solid rgba(255,221,0,0.15);
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .options-grid { display: flex; flex-direction: column; gap: 6px; }
+
+  .opt-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-btn);
+    padding: 9px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
+    text-align: left;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .opt-btn:hover { background: #162036; color: var(--text-primary); border-color: #2a4070; transform: translateX(2px); }
+  .opt-btn .opt-range { flex: 1; }
+
+  .opt-btn .opt-score {
+    font-family: var(--score-font);
+    font-size: 15px;
+    font-weight: 700;
+    min-width: 32px;
+    text-align: right;
+    padding-left: 8px;
+  }
+
+  .opt-btn.clr-green .opt-score { color: var(--btn-green-text); }
+  .opt-btn.clr-yellow .opt-score { color: var(--btn-yellow-text); }
+  .opt-btn.clr-orange .opt-score { color: var(--neon-orange); }
+  .opt-btn.clr-red .opt-score { color: var(--btn-red-text); }
+
+  .opt-btn.selected.clr-green { background: var(--btn-green); border-color: var(--btn-green-border); color: var(--btn-green-text); box-shadow: 0 0 12px rgba(0,200,83,0.2); }
+  .opt-btn.selected.clr-yellow { background: var(--btn-yellow); border-color: var(--btn-yellow-border); color: var(--btn-yellow-text); box-shadow: 0 0 12px rgba(255,214,0,0.2); }
+  .opt-btn.selected.clr-orange { background: #3d1a00; border-color: var(--neon-orange); color: var(--neon-orange); box-shadow: 0 0 12px rgba(255,136,0,0.2); }
+  .opt-btn.selected.clr-red { background: var(--btn-red); border-color: var(--btn-red-border); color: var(--btn-red-text); box-shadow: 0 0 12px rgba(255,51,102,0.2); }
+
+  .opt-btn.selected::after { content: '✓'; position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; opacity: 0.8; }
+  .opt-btn.selected .opt-range { padding-left: 14px; }
+
+  .actions-section { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; align-items: center; }
+
+  .btn-calc {
+    flex: 1;
+    min-width: 200px;
+    background: linear-gradient(135deg, #004d6b, #006d8f);
+    border: 1.5px solid var(--neon-blue);
+    border-radius: 12px;
+    color: var(--neon-blue);
+    font-size: 16px;
+    font-weight: 700;
+    padding: 16px 28px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    box-shadow: 0 0 20px rgba(0,212,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .btn-calc:hover { background: linear-gradient(135deg, #005d80, #007daa); box-shadow: 0 0 30px rgba(0,212,255,0.3); transform: translateY(-1px); }
+  .btn-calc:active { transform: translateY(0); }
+
+  .btn-reset {
+    background: transparent;
+    border: 1.5px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-reset:hover { border-color: var(--neon-red); color: var(--neon-red); }
+
+  .result-section {
+    background: var(--bg-card);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+    display: none;
+    box-shadow: var(--shadow-card);
+    animation: fadeIn 0.4s ease;
+  }
+
+  .result-section.visible { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-main { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; align-items: stretch; }
+
+  .result-score-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 14px;
+    padding: 20px 28px;
+    min-width: 150px;
+    position: relative;
+  }
+
+  .result-score-block .big-score { font-family: var(--score-font); font-size: 56px; font-weight: 700; line-height: 1; transition: color 0.3s; }
+  .result-score-block .score-unit { font-size: 12px; color: var(--text-secondary); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+  .result-risk-block { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 12px; }
+
+  .risk-row { display: flex; align-items: center; gap: 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px 16px; }
+  .risk-row .risk-icon { font-size: 20px; }
+  .risk-row .risk-info { flex: 1; }
+  .risk-row .risk-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+  .risk-row .risk-value { font-family: var(--score-font); font-size: 24px; font-weight: 700; color: var(--neon-blue); transition: color 0.3s; }
+
+  .risk-meter { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px 16px; }
+  .risk-meter-label { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.6px; }
+
+  .risk-bar-outer { background: var(--bg-primary); border-radius: 99px; height: 10px; overflow: hidden; position: relative; }
+  .risk-bar-inner { height: 100%; border-radius: 99px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1), background 0.3s; min-width: 4px; }
+
+  .risk-ticks { display: flex; justify-content: space-between; margin-top: 4px; font-size: 10px; color: var(--text-muted); }
+
+  .interp-block { background: var(--bg-secondary); border-left: 3px solid var(--neon-blue); border-radius: 0 10px 10px 0; padding: 16px 18px; margin-top: 16px; transition: border-color 0.3s; }
+  .interp-category { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+  .interp-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+  .interp-recs { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+  .interp-recs .rec-item { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+  .interp-recs .rec-item::before { content: '→'; color: var(--neon-blue); flex-shrink: 0; margin-top: 1px; }
+
+  .validation-msg { background: rgba(255,51,102,0.08); border: 1.5px solid rgba(255,51,102,0.3); border-radius: 10px; padding: 14px 16px; font-size: 13px; color: var(--neon-red); display: none; margin-bottom: 16px; }
+  .validation-msg.visible { display: block; }
+  .validation-msg ul { margin-top: 8px; padding-left: 18px; }
+  .validation-msg li { margin-bottom: 3px; }
+
+  .print-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+
+  .btn-print {
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 12px 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: 1.5px solid var(--border-color);
+    color: var(--text-secondary);
+  }
+
+  .btn-print:hover { border-color: var(--neon-blue); color: var(--neon-blue); }
+
+  .footer-note { text-align: center; font-size: 12px; color: var(--text-muted); padding: 16px; border-top: 1px solid var(--border-color); margin-top: 24px; line-height: 1.6; }
+
+  .sticky-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,14,26,0.95); border-top: 1px solid var(--border-color); backdrop-filter: blur(12px); padding: 10px 16px; z-index: 99; display: none; }
+  .sticky-inner { max-width: 960px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+  .sticky-score { display: flex; flex-direction: column; align-items: center; min-width: 56px; }
+  .sticky-score .val { font-family: var(--score-font); font-size: 26px; font-weight: 700; color: var(--neon-blue); line-height: 1; }
+  .sticky-score .lbl { font-size: 9px; color: var(--text-muted); text-transform: uppercase; }
+  .sticky-progress { flex: 1; }
+  .sticky-calc-btn { background: linear-gradient(135deg, #004d6b, #006d8f); border: 1.5px solid var(--neon-blue); border-radius: 10px; color: var(--neon-blue); font-size: 13px; font-weight: 700; padding: 10px 16px; cursor: pointer; white-space: nowrap; }
+
+  @media (max-width: 640px) {
+    .sticky-bottom { display: block; }
+    .params-grid { grid-template-columns: 1fr; }
+    .header-text h1 { font-size: 16px; }
+    .live-score-badge .score-val { font-size: 22px; }
+    .result-score-block .big-score { font-size: 42px; }
+  }
+
+  .risk-low .result-score-block { border-color: var(--neon-green); }
+  .risk-low .big-score { color: var(--neon-green); text-shadow: 0 0 20px rgba(0,255,136,0.4); }
+  .risk-low .risk-value { color: var(--neon-green); }
+  .risk-low .interp-block { border-color: var(--neon-green); }
+  .risk-low .interp-category { color: var(--neon-green); }
+  .risk-low .live-score-badge { border-color: #00c853; }
+  .risk-low .live-score-badge .score-val { color: var(--neon-green); text-shadow: 0 0 16px rgba(0,255,136,0.4); }
+  .risk-low .risk-bar-inner { background: var(--neon-green); }
+
+  .risk-moderate .result-score-block { border-color: var(--neon-yellow); }
+  .risk-moderate .big-score { color: var(--neon-yellow); text-shadow: 0 0 20px rgba(255,221,0,0.4); }
+  .risk-moderate .risk-value { color: var(--neon-yellow); }
+  .risk-moderate .interp-block { border-color: var(--neon-yellow); }
+  .risk-moderate .interp-category { color: var(--neon-yellow); }
+  .risk-moderate .live-score-badge { border-color: #ffd600; }
+  .risk-moderate .live-score-badge .score-val { color: var(--neon-yellow); text-shadow: 0 0 16px rgba(255,221,0,0.4); }
+  .risk-moderate .risk-bar-inner { background: var(--neon-yellow); }
+
+  .risk-high .result-score-block { border-color: var(--neon-orange); }
+  .risk-high .big-score { color: var(--neon-orange); text-shadow: 0 0 20px rgba(255,136,0,0.4); }
+  .risk-high .risk-value { color: var(--neon-orange); }
+  .risk-high .interp-block { border-color: var(--neon-orange); }
+  .risk-high .interp-category { color: var(--neon-orange); }
+  .risk-high .live-score-badge { border-color: #ff8800; }
+  .risk-high .live-score-badge .score-val { color: var(--neon-orange); text-shadow: 0 0 16px rgba(255,136,0,0.4); }
+  .risk-high .risk-bar-inner { background: var(--neon-orange); }
+
+  .risk-critical .result-score-block { border-color: var(--neon-red); }
+  .risk-critical .big-score { color: var(--neon-red); text-shadow: 0 0 20px rgba(255,51,102,0.4); }
+  .risk-critical .risk-value { color: var(--neon-red); }
+  .risk-critical .interp-block { border-color: var(--neon-red); }
+  .risk-critical .interp-category { color: var(--neon-red); }
+  .risk-critical .live-score-badge { border-color: #ff3366; }
+  .risk-critical .live-score-badge .score-val { color: var(--neon-red); text-shadow: 0 0 16px rgba(255,51,102,0.4); }
+  .risk-critical .risk-bar-inner { background: linear-gradient(90deg, var(--neon-orange), var(--neon-red)); }
+
+  /* ===================== PRINT STYLES ===================== */
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 8mm 10mm 8mm 10mm;
+    }
+
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      background: #fff !important;
+      color: #000 !important;
+      font-size: 9pt !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    .app-header, .progress-section, .params-grid, .actions-section,
+    .print-buttons, .footer-note, .sticky-bottom, .validation-msg,
+    .patient-section { display: none !important; }
+
+    .main-container {
+      padding: 0 !important;
+      max-width: 100% !important;
+    }
+
+    .result-section { display: none !important; }
+
+    .print-doc {
+      display: block !important;
+      font-family: 'Times New Roman', serif !important;
+      color: #000 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      font-size: 8.5pt !important;
+    }
+
+    .print-doc * { page-break-inside: avoid; }
+  }
+
+  .print-doc {
+    display: none;
+    font-family: 'Times New Roman', serif;
+    color: #000;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  .print-doc.print-visible { display: block; }
+
+  .print-hospital {
+    text-align: center;
+    border-bottom: 2px solid #000;
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+  }
+
+  .print-hospital h2 { font-size: 13pt; font-weight: bold; margin-bottom: 2px; }
+  .print-hospital p { font-size: 9pt; }
+
+  .print-doc-title {
+    text-align: center;
+    font-size: 11pt;
+    font-weight: bold;
+    margin: 8px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .print-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px 16px;
+    margin-bottom: 8px;
+    font-size: 9pt;
+  }
+
+  .print-meta-row { display: flex; gap: 4px; }
+  .print-meta-row .key { font-weight: bold; white-space: nowrap; }
+
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 7.5pt;
+    margin-bottom: 8px;
+    table-layout: fixed;
+  }
+
+  .print-table th, .print-table td {
+    border: 1px solid #555;
+    padding: 3px 5px;
+    vertical-align: top;
+    word-wrap: break-word;
+  }
+
+  .print-table th { background: #d8d8d8 !important; font-weight: bold; text-align: left; }
+  .print-table tr:nth-child(even) td { background: #f5f5f5 !important; }
+
+  .print-table col.col-num  { width: 24px; }
+  .print-table col.col-name { width: 28%; }
+  .print-table col.col-val  { width: auto; }
+  .print-table col.col-pts  { width: 36px; }
+
+  .print-score-row {
+    font-size: 11pt;
+    font-weight: bold;
+    text-align: center;
+    margin: 8px 0 4px;
+    padding: 6px;
+    border: 2px solid #000;
+  }
+
+  .print-risk-row {
+    font-size: 9pt;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 8px;
+    padding: 5px;
+    border: 1px solid #555;
+    background: #efefef !important;
+  }
+
+  .print-interp {
+    border: 1px solid #666;
+    padding: 7px 10px;
+    margin-bottom: 8px;
+    font-size: 8pt;
+    background: #fafafa !important;
+  }
+
+  .print-interp h4 { font-size: 9pt; font-weight: bold; margin-bottom: 4px; text-transform: uppercase; }
+  .print-interp p { margin-bottom: 3px; line-height: 1.4; }
+  .print-interp ul { padding-left: 14px; }
+  .print-interp li { margin-bottom: 2px; line-height: 1.4; }
+
+  .print-disclaimer {
+    font-size: 7pt;
+    color: #555;
+    border-top: 1px solid #ccc;
+    padding-top: 5px;
+    margin-top: 6px;
+    font-style: italic;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .print-signature {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 9pt;
+  }
+
+  .print-sign-block { border-top: 1px solid #000; width: 38%; padding-top: 3px; font-size: 8.5pt; }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-inner">
+    <div class="header-title">
+      <div class="header-icon">🫀</div>
+      <div class="header-text">
+        <h1>SAPS II</h1>
+        <p>Simplified Acute Physiology Score II · Калькулятор ОРИТ</p>
+      </div>
+    </div>
+    <div class="live-score-badge" id="headerScoreBadge">
+      <div class="pulse-dot"></div>
+      <div>
+        <div class="score-val" id="headerScore">0</div>
+        <div class="score-label">Балл<br>SAPS II</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="main-container">
+
+  <div class="patient-section">
+    <div class="section-title">
+      <span>👤 Данные пациента</span>
+      <div class="section-title-line"></div>
+    </div>
+    <div class="patient-grid">
+      <div class="input-group" style="grid-column: 1 / -1;">
+        <label>ФИО пациента</label>
+        <input type="text" id="patientName" placeholder="Фамилия Имя Отчество" oninput="updateLive()">
+      </div>
+      <div class="input-group">
+        <label>Медицинская карта №</label>
+        <input type="text" id="cardNumber" placeholder="Номер карты" oninput="updateLive()">
+      </div>
+      <div class="input-group">
+        <label>Отделение</label>
+        <input type="text" id="department" placeholder="Напр.: ОРИТ-1" oninput="updateLive()">
+      </div>
+      <div class="input-group">
+        <label>Название больницы</label>
+        <input type="text" id="hospital" placeholder="Наименование учреждения" oninput="updateLive()">
+      </div>
+      <div class="input-group">
+        <label>ФИО врача</label>
+        <input type="text" id="doctorName" placeholder="Фамилия И.О." oninput="updateLive()">
+      </div>
+      <div class="input-group">
+        <label>Дата</label>
+        <input type="text" id="dateField" readonly>
+      </div>
+    </div>
+  </div>
+
+  <div class="progress-section">
+    <div class="progress-info">
+      <div class="progress-text">
+        <span>Заполнено параметров</span>
+        <span id="progressLabel">0 / 17</span>
+      </div>
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="progressBar"></div>
+      </div>
+    </div>
+    <div class="progress-stats">
+      <div class="stat-chip"><div class="num" id="statFilled">0</div><div class="lbl">Заполнено</div></div>
+      <div class="stat-chip"><div class="num" id="statLeft" style="color: var(--neon-red)">17</div><div class="lbl">Осталось</div></div>
+      <div class="stat-chip"><div class="num" id="statScore">0</div><div class="lbl">Сумма</div></div>
+    </div>
+  </div>
+
+  <div class="validation-msg" id="validationMsg"></div>
+
+  <div class="params-grid" id="paramsGrid"></div>
+
+  <div class="actions-section">
+    <button class="btn-calc" onclick="calculate()">
+      <span>⚡</span><span>Рассчитать SAPS II</span>
+    </button>
+    <button class="btn-reset" onclick="resetAll()">↺ Сбросить</button>
+  </div>
+
+  <div class="result-section" id="resultSection">
+    <div class="section-title">
+      <span>📊 Результат расчёта SAPS II</span>
+      <div class="section-title-line"></div>
+    </div>
+    <div class="result-main">
+      <div class="result-score-block">
+        <div class="big-score" id="resultScore">—</div>
+        <div class="score-unit">баллов SAPS II</div>
+      </div>
+      <div class="result-risk-block">
+        <div class="risk-row">
+          <div class="risk-icon">💀</div>
+          <div class="risk-info">
+            <div class="risk-label">Расчётная летальность</div>
+            <div class="risk-value" id="resultMortality">—</div>
+          </div>
+        </div>
+        <div class="risk-meter">
+          <div class="risk-meter-label">Шкала риска летальности</div>
+          <div class="risk-bar-outer">
+            <div class="risk-bar-inner" id="riskBarInner"></div>
+          </div>
+          <div class="risk-ticks">
+            <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="interp-block" id="interpBlock">
+      <div class="interp-category" id="interpCategory"></div>
+      <div class="interp-text" id="interpText"></div>
+      <div class="interp-recs" id="interpRecs"></div>
+    </div>
+  </div>
+
+  <div class="print-buttons" id="printButtons" style="display:none;">
+    <button class="btn-print" onclick="printDoc()">🖨 Печать</button>
+  </div>
+
+  <div class="print-doc" id="printDoc"></div>
+
+  <div class="footer-note">
+    SAPS II — прогностическая шкала для оценки тяжести состояния пациентов в ОРИТ.<br>
+    Результат не заменяет клиническое суждение врача. Le Gall JR et al., JAMA 1993.
+  </div>
+
+</div>
+
+<div class="sticky-bottom">
+  <div class="sticky-inner">
+    <div class="sticky-score">
+      <div class="val" id="stickyScore">0</div>
+      <div class="lbl">SAPS II</div>
+    </div>
+    <div class="sticky-progress">
+      <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;" id="stickyLabel">0/17 заполнено</div>
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="stickyProgress"></div>
+      </div>
+    </div>
+    <button class="sticky-calc-btn" onclick="calculate()">⚡ Считать</button>
+  </div>
+</div>
+
+<script>
+const SAPS_PARAMS = [
+  { id:'age', num:1, name:'Возраст', eng:'Age', note:null, options:[
+    {label:'< 40 лет',score:0,color:'green'},{label:'40 – 59 лет',score:7,color:'yellow'},
+    {label:'60 – 69 лет',score:12,color:'orange'},{label:'70 – 74 года',score:15,color:'red'},
+    {label:'75 – 79 лет',score:16,color:'red'},{label:'≥ 80 лет',score:18,color:'red'}]},
+  { id:'hr', num:2, name:'ЧСС', eng:'Heart Rate, bpm', note:null, options:[
+    {label:'< 40 уд/мин',score:11,color:'red'},{label:'40 – 69 уд/мин',score:2,color:'yellow'},
+    {label:'70 – 119 уд/мин',score:0,color:'green'},{label:'120 – 159 уд/мин',score:4,color:'yellow'},
+    {label:'≥ 160 уд/мин',score:7,color:'orange'}]},
+  { id:'sbp', num:3, name:'Систолическое АД', eng:'Systolic Blood Pressure, mmHg', note:null, options:[
+    {label:'< 70 мм рт.ст.',score:13,color:'red'},{label:'70 – 99 мм рт.ст.',score:5,color:'orange'},
+    {label:'100 – 199 мм рт.ст.',score:0,color:'green'},{label:'≥ 200 мм рт.ст.',score:2,color:'yellow'}]},
+  { id:'temp', num:4, name:'Температура тела', eng:'Body Temperature, °C', note:null, options:[
+    {label:'< 39.0 °C',score:0,color:'green'},{label:'≥ 39.0 °C',score:3,color:'yellow'}]},
+  { id:'pf', num:5, name:'PaO₂ / FiO₂', eng:'Oxygenation Index', note:'⚠️ Применяется только при ИВЛ или СРАР/CPAP', options:[
+    {label:'≥ 200 мм рт.ст.',score:0,color:'green'},{label:'< 200 мм рт.ст.',score:9,color:'red'},
+    {label:'Без ИВЛ/СРАР — не применимо',score:0,color:'green'}]},
+  { id:'urine', num:6, name:'Диурез за 24 часа', eng:'Urine Output, L/day', note:null, options:[
+    {label:'≥ 1.0 л/сут',score:0,color:'green'},{label:'0.5 – 0.99 л/сут',score:4,color:'yellow'},
+    {label:'< 0.5 л/сут',score:11,color:'red'}]},
+  { id:'bun', num:7, name:'Мочевина крови', eng:'BUN / Urea, mg/dL', note:null, options:[
+    {label:'< 28 мг/дл (< 10 ммоль/л)',score:0,color:'green'},
+    {label:'28 – 83 мг/дл (10–30 ммоль/л)',score:6,color:'yellow'},
+    {label:'≥ 84 мг/дл (> 30 ммоль/л)',score:10,color:'red'}]},
+  { id:'wbc', num:8, name:'Лейкоциты', eng:'WBC, ×10⁹/L', note:null, options:[
+    {label:'< 1.0 ×10⁹/л',score:12,color:'red'},{label:'1.0 – 19.9 ×10⁹/л',score:0,color:'green'},
+    {label:'≥ 20.0 ×10⁹/л',score:3,color:'yellow'}]},
+  { id:'k', num:9, name:'Калий', eng:'Potassium K⁺, mmol/L', note:null, options:[
+    {label:'< 3.0 ммоль/л',score:3,color:'yellow'},{label:'3.0 – 4.9 ммоль/л',score:0,color:'green'},
+    {label:'≥ 5.0 ммоль/л',score:3,color:'yellow'}]},
+  { id:'na', num:10, name:'Натрий', eng:'Sodium Na⁺, mmol/L', note:null, options:[
+    {label:'< 125 ммоль/л',score:5,color:'orange'},{label:'125 – 144 ммоль/л',score:0,color:'green'},
+    {label:'≥ 145 ммоль/л',score:1,color:'yellow'}]},
+  { id:'hco3', num:11, name:'Бикарбонат (HCO₃⁻)', eng:'Serum Bicarbonate, mmol/L', note:null, options:[
+    {label:'< 15 ммоль/л',score:6,color:'red'},{label:'15 – 19 ммоль/л',score:3,color:'yellow'},
+    {label:'≥ 20 ммоль/л',score:0,color:'green'}]},
+  { id:'bili', num:12, name:'Билирубин', eng:'Bilirubin, mg/dL', note:null, options:[
+    {label:'< 4 мг/дл (< 68 мкмоль/л)',score:0,color:'green'},
+    {label:'4 – 5.9 мг/дл (68–102 мкмоль/л)',score:4,color:'yellow'},
+    {label:'≥ 6 мг/дл (> 102 мкмоль/л)',score:9,color:'red'}]},
+  { id:'gcs', num:13, name:'Шкала комы Глазго', eng:'Glasgow Coma Scale (GCS)', note:null, options:[
+    {label:'14 – 15 баллов',score:0,color:'green'},{label:'11 – 13 баллов',score:5,color:'yellow'},
+    {label:'9 – 10 баллов',score:7,color:'orange'},{label:'6 – 8 баллов',score:13,color:'red'},
+    {label:'< 6 баллов',score:26,color:'red'}]},
+  { id:'admtype', num:14, name:'Тип поступления', eng:'Type of Admission', note:null, options:[
+    {label:'Плановое хирургическое',score:0,color:'green'},
+    {label:'Терапевтическое',score:6,color:'yellow'},
+    {label:'Экстренное хирургическое',score:8,color:'orange'}]},
+  { id:'aids', num:15, name:'СПИД', eng:'AIDS / HIV', note:null, options:[
+    {label:'Нет',score:0,color:'green'},{label:'Да — СПИД в анамнезе',score:17,color:'red'}]},
+  { id:'mets', num:16, name:'Метастатический рак', eng:'Metastatic Cancer', note:null, options:[
+    {label:'Нет',score:0,color:'green'},{label:'Да — метастатический рак',score:9,color:'red'}]},
+  { id:'hemato', num:17, name:'Гематологическая опухоль', eng:'Hematologic Malignancy', note:null, options:[
+    {label:'Нет',score:0,color:'green'},
+    {label:'Да — гематологическая злокачественная опухоль',score:10,color:'red'}]},
+];
+
+const state = { selections: {} };
+
+function calcTotalScore() {
+  let total = 0;
+  for (const p of SAPS_PARAMS) { const i = state.selections[p.id]; if (i !== undefined) total += p.options[i].score; }
+  return total;
+}
+function calcFilledCount() { return Object.keys(state.selections).length; }
+function calcMortality(score) {
+  const logit = -7.7631 + (0.0737 * score) + (0.9971 * Math.log(score + 1));
+  const eL = Math.exp(logit);
+  return (eL / (1 + eL)) * 100;
+}
+function getRiskClass(score) {
+  if (score < 29) return 'risk-low';
+  if (score < 40) return 'risk-moderate';
+  if (score < 55) return 'risk-high';
+  return 'risk-critical';
+}
+function getInterpretation(score, mortality) {
+  if (score < 29) return {
+    category:'🟢 Низкий риск летальности',
+    text:'Состояние пациента расценивается как относительно стабильное. Расчётная летальность по SAPS II ниже среднего для пациентов ОРИТ.',
+    recs:['Стандартный мониторинг витальных функций','Ежедневная оценка клинического статуса','Продолжение базовой терапии основного заболевания','Оценка возможности перевода из ОРИТ при стабильной динамике']
+  };
+  if (score < 40) return {
+    category:'🟡 Умеренный риск летальности',
+    text:'Состояние пациента средней тяжести. Необходим усиленный мониторинг. Расчётная летальность соответствует умеренно повышенному риску.',
+    recs:['Мониторинг витальных функций каждые 2–4 часа','Оценка органной дисфункции (SOFA-шкала)','Контроль лабораторных показателей не реже 1 раза в сутки','Рассмотреть оптимизацию инфузионной и респираторной поддержки','Мультидисциплинарный разбор при ухудшении состояния']
+  };
+  if (score < 55) return {
+    category:'🟠 Высокий риск летальности',
+    text:'Тяжёлое критическое состояние. Высокий риск неблагоприятного исхода. Необходимо интенсивное наблюдение и активная терапия.',
+    recs:['Непрерывный мониторинг гемодинамики, SpO₂, ЭКГ','Инвазивный мониторинг АД при гемодинамической нестабильности','Оценка SOFA ежедневно или при изменении состояния','Рассмотреть расширение объёма органозаместительной терапии','Обсудить прогноз и цели терапии с родственниками пациента']
+  };
+  return {
+    category:'🔴 Крайне высокий риск летальности',
+    text:'Крайне тяжёлое критическое состояние с очень высокой расчётной летальностью. Требуется эскалация терапии и непрерывное интенсивное наблюдение.',
+    recs:['Максимальный мониторинг всех витальных показателей','Экстренная коррекция жизнеугрожающих нарушений','Расширенный гемодинамический мониторинг (PICCO, ПАК)','Экстракорпоральные методы лечения при показаниях (ЭКМО, ЗПТ)','Неотложная консультация профильных специалистов','Ежечасная документация состояния и реакции на терапию']
+  };
+}
+
+function renderParams() {
+  const grid = document.getElementById('paramsGrid');
+  grid.innerHTML = '';
+  for (const param of SAPS_PARAMS) {
+    const card = document.createElement('div');
+    card.className = 'param-card';
+    card.id = 'card-' + param.id;
+    const selectedIdx = state.selections[param.id];
+    const isSelected = selectedIdx !== undefined;
+    if (isSelected) card.classList.add('filled');
+    const selectedScore = isSelected ? param.options[selectedIdx].score : null;
+    const scoreBadgeClass = isSelected ? (selectedScore === 0 ? 'zero' : 'scored') : '';
+    let noteHTML = param.note ? `<div class="param-note">${param.note}</div>` : '';
+    let optionsHTML = '';
+    for (let i = 0; i < param.options.length; i++) {
+      const opt = param.options[i];
+      const color = opt.color;
+      const isActive = selectedIdx === i;
+      optionsHTML += `<button class="opt-btn clr-${color}${isActive?' selected':''}" onclick="selectOption('${param.id}',${i})" data-param="${param.id}" data-idx="${i}">
+        <span class="opt-range">${opt.label}</span><span class="opt-score">+${opt.score}</span></button>`;
+    }
+    card.innerHTML = `
+      <div class="param-header">
+        <div class="param-info">
+          <div class="param-num">Параметр ${param.num} / 17</div>
+          <div class="param-name">${param.name}</div>
+          ${param.eng?`<div class="param-eng">(${param.eng})</div>`:''}
+        </div>
+        <div>
+          <div class="param-score-badge ${scoreBadgeClass}" id="badge-${param.id}">${isSelected?selectedScore:'—'}</div>
+          <span class="pts-label">баллов</span>
+        </div>
+      </div>
+      ${noteHTML}
+      <div class="options-grid">${optionsHTML}</div>`;
+    grid.appendChild(card);
+  }
+}
+
+function selectOption(paramId, optionIdx) {
+  if (state.selections[paramId] === optionIdx) delete state.selections[paramId];
+  else state.selections[paramId] = optionIdx;
+  updateCard(paramId);
+  updateLive();
+  const card = document.getElementById('card-' + paramId);
+  if (card) card.classList.remove('error');
+}
+
+function updateCard(paramId) {
+  const param = SAPS_PARAMS.find(p => p.id === paramId);
+  if (!param) return;
+  const card = document.getElementById('card-' + paramId);
+  const badge = document.getElementById('badge-' + paramId);
+  const selectedIdx = state.selections[paramId];
+  const isSelected = selectedIdx !== undefined;
+  card.classList.toggle('filled', isSelected);
+  if (badge) {
+    const score = isSelected ? param.options[selectedIdx].score : null;
+    badge.textContent = isSelected ? score : '—';
+    badge.className = 'param-score-badge' + (isSelected ? (score===0?' zero':' scored') : '');
+  }
+  card.querySelectorAll('.opt-btn').forEach((btn, i) => btn.classList.toggle('selected', i === selectedIdx));
+}
+
+function updateLive() {
+  const total = calcTotalScore();
+  const filled = calcFilledCount();
+  const left = 17 - filled;
+  const pct = (filled / 17) * 100;
+  document.getElementById('headerScore').textContent = total;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = filled + ' / 17';
+  document.getElementById('statFilled').textContent = filled;
+  document.getElementById('statLeft').textContent = left;
+  document.getElementById('statScore').textContent = total;
+  document.getElementById('stickyScore').textContent = total;
+  document.getElementById('stickyLabel').textContent = filled + '/17 заполнено';
+  document.getElementById('stickyProgress').style.width = pct + '%';
+  const riskClass = filled >= 17 || total > 0 ? getRiskClass(total) : '';
+  const badge = document.getElementById('headerScoreBadge');
+  ['risk-low','risk-moderate','risk-high','risk-critical'].forEach(c => { badge.classList.remove(c); document.body.classList.remove(c); });
+  if (filled > 0) badge.classList.add(riskClass);
+}
+
+function calculate() {
+  const missing = SAPS_PARAMS.filter(p => state.selections[p.id] === undefined);
+  SAPS_PARAMS.forEach(p => { const c = document.getElementById('card-'+p.id); if(c) c.classList.remove('error'); });
+  if (missing.length > 0) {
+    const vm = document.getElementById('validationMsg');
+    vm.className = 'validation-msg visible';
+    let html = `<strong>⚠️ Не выбраны ${missing.length} из 17 параметров:</strong><ul>`;
+    missing.forEach(p => { html += `<li>${p.num}. ${p.name}</li>`; const c = document.getElementById('card-'+p.id); if(c) c.classList.add('error'); });
+    html += `</ul><p style="margin-top:6px;font-size:12px;">Расчёт выполнен по заполненным параметрам (${17-missing.length}/17).</p>`;
+    vm.innerHTML = html;
+    const firstMissing = document.getElementById('card-'+missing[0].id);
+    if (firstMissing) firstMissing.scrollIntoView({behavior:'smooth',block:'center'});
+  } else {
+    document.getElementById('validationMsg').className = 'validation-msg';
+  }
+  const score = calcTotalScore();
+  const mortality = calcMortality(score);
+  const riskClass = getRiskClass(score);
+  const interp = getInterpretation(score, mortality);
+  document.getElementById('resultScore').textContent = score;
+  document.getElementById('resultMortality').textContent = mortality.toFixed(1) + '%';
+  document.getElementById('riskBarInner').style.width = Math.min(mortality,100) + '%';
+  document.getElementById('interpCategory').textContent = interp.category;
+  document.getElementById('interpText').textContent = interp.text;
+  document.getElementById('interpRecs').innerHTML = interp.recs.map(r=>`<div class="rec-item">${r}</div>`).join('');
+  const resultSection = document.getElementById('resultSection');
+  ['risk-low','risk-moderate','risk-high','risk-critical'].forEach(c => { resultSection.classList.remove(c); document.body.classList.remove(c); });
+  resultSection.classList.add(riskClass);
+  resultSection.classList.add('visible');
+  ['risk-low','risk-moderate','risk-high','risk-critical'].forEach(c => document.getElementById('headerScoreBadge').classList.remove(c));
+  document.getElementById('headerScoreBadge').classList.add(riskClass);
+  document.getElementById('printButtons').style.display = 'flex';
+  buildPrintDoc(score, mortality, interp);
+  resultSection.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function buildPrintDoc(score, mortality, interp) {
+  const name = document.getElementById('patientName').value || '—';
+  const card = document.getElementById('cardNumber').value || '—';
+  const dept = document.getElementById('department').value || '—';
+  const hosp = document.getElementById('hospital').value || '—';
+  const doctor = document.getElementById('doctorName').value || '—';
+  const date = document.getElementById('dateField').value || '—';
+
+  let tableRows = '';
+  for (const param of SAPS_PARAMS) {
+    const idx = state.selections[param.id];
+    const isSelected = idx !== undefined;
+    const optLabel = isSelected ? param.options[idx].label : '<i>не выбрано</i>';
+    const optScore = isSelected ? param.options[idx].score : '—';
+    tableRows += `<tr>
+      <td>${param.num}</td>
+      <td><strong>${param.name}</strong>${param.eng?`<br><small style="color:#555">(${param.eng})</small>`:''}</td>
+      <td>${optLabel}</td>
+      <td style="text-align:center;font-weight:bold;">${optScore}</td>
+    </tr>`;
+  }
+
+  const riskText = {'risk-low':'Низкий','risk-moderate':'Умеренный','risk-high':'Высокий','risk-critical':'Крайне высокий'}[getRiskClass(score)];
+  let recsHtml = '<ul>' + interp.recs.map(r=>`<li>${r}</li>`).join('') + '</ul>';
+
+  document.getElementById('printDoc').innerHTML = `
+    <div class="print-hospital">
+      <h2>${hosp !== '—' ? hosp : 'Медицинское учреждение'}</h2>
+      <p>Отделение: ${dept}</p>
+    </div>
+    <div class="print-doc-title">Протокол расчёта шкалы SAPS II</div>
+    <div class="print-meta">
+      <div class="print-meta-row"><span class="key">Пациент:</span><span>${name}</span></div>
+      <div class="print-meta-row"><span class="key">Дата:</span><span>${date}</span></div>
+      <div class="print-meta-row"><span class="key">Медицинская карта №:</span><span>${card}</span></div>
+      <div class="print-meta-row"><span class="key">Врач:</span><span>${doctor}</span></div>
+    </div>
+    <table class="print-table">
+      <colgroup><col class="col-num"><col class="col-name"><col class="col-val"><col class="col-pts"></colgroup>
+      <thead><tr><th>№</th><th>Параметр</th><th>Значение</th><th style="text-align:center">Баллы</th></tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+    <div class="print-score-row">ИТОГОВЫЙ БАЛЛ SAPS II: &nbsp; <span style="font-size:14pt;">${score}</span> &nbsp; баллов</div>
+    <div class="print-risk-row">Расчётная летальность: <strong>${mortality.toFixed(1)}%</strong> &nbsp;|&nbsp; Категория риска: <strong>${riskText}</strong></div>
+    <div class="print-interp">
+      <h4>Интерпретация</h4>
+      <p><strong>${interp.category.replace(/^[^\s]+\s/,'')}</strong></p>
+      <p>${interp.text}</p>
+      <p><strong>Рекомендации:</strong></p>
+      ${recsHtml}
+    </div>
+    <div class="print-disclaimer">
+      SAPS II (Le Gall JR et al., JAMA 1993) — прогностическая шкала для оценки тяжести состояния пациентов в ОРИТ.<br>
+      Расчётная летальность является статистической оценкой и не заменяет клиническое суждение врача.
+    </div>
+    <div class="print-signature">
+      <div class="print-sign-block">Лечащий врач: ${doctor}</div>
+      <div class="print-sign-block">Подпись: ________________</div>
+    </div>`;
+}
+
+function printDoc() {
+  const printContent = document.getElementById('printDoc').innerHTML;
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8">
+    <title>SAPS II — Протокол расчёта</title>
+    <style>
+      @page { size: A4 portrait; margin: 8mm 10mm 8mm 10mm; }
+      * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { font-family: 'Times New Roman', serif; color: #000; background: #fff; font-size: 8.5pt; }
+      .print-hospital { text-align:center; border-bottom:2px solid #000; padding-bottom:5px; margin-bottom:6px; }
+      .print-hospital h2 { font-size:12pt; font-weight:bold; margin-bottom:2px; }
+      .print-hospital p { font-size:8pt; }
+      .print-doc-title { text-align:center; font-size:10pt; font-weight:bold; margin:5px 0; text-transform:uppercase; letter-spacing:1px; }
+      .print-meta { display:grid; grid-template-columns:1fr 1fr; gap:2px 14px; margin-bottom:6px; font-size:8.5pt; }
+      .print-meta-row { display:flex; gap:4px; }
+      .print-meta-row .key { font-weight:bold; white-space:nowrap; }
+      .print-table { width:100%; border-collapse:collapse; font-size:7pt; margin-bottom:6px; table-layout:fixed; }
+      .print-table colgroup col:nth-child(1) { width:22px; }
+      .print-table colgroup col:nth-child(2) { width:28%; }
+      .print-table colgroup col:nth-child(4) { width:34px; }
+      .print-table th, .print-table td { border:1px solid #555; padding:2px 4px; vertical-align:top; word-wrap:break-word; }
+      .print-table th { background:#d8d8d8; font-weight:bold; text-align:left; }
+      .print-table tr:nth-child(even) td { background:#f5f5f5; }
+      .print-score-row { font-size:10pt; font-weight:bold; text-align:center; margin:6px 0 4px; padding:5px; border:2px solid #000; }
+      .print-risk-row { font-size:8.5pt; font-weight:bold; text-align:center; margin-bottom:6px; padding:4px; border:1px solid #555; background:#efefef; }
+      .print-interp { border:1px solid #666; padding:6px 8px; margin-bottom:6px; font-size:7.5pt; background:#fafafa; }
+      .print-interp h4 { font-size:8.5pt; font-weight:bold; margin-bottom:3px; text-transform:uppercase; }
+      .print-interp p { margin-bottom:2px; line-height:1.35; }
+      .print-interp ul { padding-left:13px; }
+      .print-interp li { margin-bottom:2px; line-height:1.35; }
+      .print-disclaimer { font-size:6.5pt; color:#555; border-top:1px solid #ccc; padding-top:4px; margin-top:4px; font-style:italic; text-align:center; line-height:1.35; }
+      .print-signature { margin-top:8px; display:flex; justify-content:space-between; font-size:8.5pt; }
+      .print-sign-block { border-top:1px solid #000; width:38%; padding-top:3px; font-size:8pt; }
+      small { font-size:85%; }
+    </style>
+  </head><body>${printContent}</body></html>`);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => { printWindow.print(); }, 400);
+}
+
+function resetAll() {
+  if (!confirm('Сбросить все выбранные параметры?')) return;
+  state.selections = {};
+  document.getElementById('resultSection').className = 'result-section';
+  document.getElementById('printButtons').style.display = 'none';
+  document.getElementById('validationMsg').className = 'validation-msg';
+  ['risk-low','risk-moderate','risk-high','risk-critical'].forEach(c => {
+    document.body.classList.remove(c);
+    document.getElementById('headerScoreBadge').classList.remove(c);
+  });
+  renderParams();
+  updateLive();
+}
+
+function init() {
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2,'0');
+  const mm = String(today.getMonth()+1).padStart(2,'0');
+  const yyyy = today.getFullYear();
+  document.getElementById('dateField').value = `${dd}.${mm}.${yyyy}`;
+  renderParams();
+  updateLive();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
