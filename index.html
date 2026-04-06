@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SAPS II — Калькулятор тяжести состояния ОРИТ</title>
+<title>SAPS II — Калькулятор тяжести состояния ОАиР</title>
 <style>
   :root {
     --bg-primary: #f0f4f8;
@@ -1127,7 +1127,7 @@
 
 <!-- AUTHORS BANNER -->
 <div class="authors-banner">
-  <div class="scale-name">SAPS II — Шкала оценки тяжести состояния пациентов ОРИТ</div>
+  <div class="scale-name">SAPS II — Шкала оценки тяжести состояния пациентов ОАиР</div>
   <div class="scale-sub">Simplified Acute Physiology Score II · Калькулятор для клинической практики</div>
   <div class="authors-list">
     <div class="author-item">
@@ -1141,7 +1141,7 @@
     <div class="divider">·</div>
     <div class="author-item">
       <span class="role">Науч. рук.:</span>
-      <span>к.м.н. Бабков Иван Леонидович</span>
+      <span> Бабков Иван Леонидович</span>
     </div>
   </div>
 </div>
@@ -1153,7 +1153,7 @@
       <div class="header-icon">🫀</div>
       <div class="header-text">
         <h1>SAPS II</h1>
-        <p>Калькулятор тяжести состояния · ОРИТ</p>
+        <p>Калькулятор тяжести состояния · ОАиР</p>
       </div>
     </div>
     <div class="live-score-badge" id="headerScoreBadge">
@@ -1186,7 +1186,7 @@
       </div>
       <div class="input-group">
         <label>Отделение</label>
-        <input type="text" id="department" placeholder="Напр.: ОРИТ-1" oninput="updateLive()">
+        <input type="text" id="department" placeholder="Напр.: ОАиР-1" oninput="updateLive()">
       </div>
       <div class="input-group">
         <label>Название больницы</label>
@@ -1292,7 +1292,7 @@
 
   <!-- FOOTER -->
   <div class="footer-note">
-    SAPS II — прогностическая шкала для оценки тяжести состояния пациентов в ОРИТ.<br>
+    SAPS II — прогностическая шкала для оценки тяжести состояния пациентов в ОАиР.<br>
     Результат не заменяет клиническое суждение врача. Le Gall JR et al., JAMA 1993.
   </div>
 
@@ -1492,12 +1492,12 @@ function getInterpretation(score, mortality) {
   if (score < 29) {
     return {
       category: '🟢 Низкий риск летальности',
-      text: 'Состояние пациента расценивается как относительно стабильное. Расчётная летальность по SAPS II ниже среднего для пациентов ОРИТ.',
+      text: 'Состояние пациента расценивается как относительно стабильное. Расчётная летальность по SAPS II ниже среднего для пациентов ОАиР.',
       recs: [
         'Стандартный мониторинг витальных функций',
         'Ежедневная оценка клинического статуса',
         'Продолжение базовой терапии основного заболевания',
-        'Оценка возможности перевода из ОРИТ при стабильной динамике',
+        'Оценка возможности перевода из ОАиР при стабильной динамике',
       ]
     };
   } else if (score < 40) {
@@ -1773,7 +1773,7 @@ function buildPrintDoc(score, mortality, interp) {
     </div>
 
     <div class="print-disclaimer">
-      SAPS II (Le Gall JR et al., JAMA 1993) — прогностическая шкала для оценки тяжести состояния пациентов в ОРИТ.<br>
+      SAPS II (Le Gall JR et al., JAMA 1993) — прогностическая шкала для оценки тяжести состояния пациентов в ОАиР.<br>
       Расчётная летальность является статистической оценкой и не заменяет клиническое суждение врача.<br>
       Формула: logit = −7.7631 + (0.0737 × SAPS II) + (0.9971 × ln(SAPS II + 1)); риск = e^logit / (1 + e^logit)
     </div>
